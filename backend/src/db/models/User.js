@@ -65,6 +65,7 @@ module.exports = (sequelize) => {
     }, {
         sequelize,
         modelName: 'User',
+        tableName: 'Users',
         hooks: {
             beforeSave: async (user) => {
                 if (user.changed('mpin_hash')) {

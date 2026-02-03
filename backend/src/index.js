@@ -6,6 +6,7 @@ const morgan = require('morgan');
 const compression = require('compression');
 const { createServer } = require('http');
 const { Server } = require("socket.io");
+const resultFetcherService = require('./app/services/result-fetcher.service');
 
 const app = express();
 const httpServer = createServer(app);
@@ -42,6 +43,7 @@ const PORT = process.env.PORT || 5000;
 
 httpServer.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
+    resultFetcherService.init(); // Start Cron Jobs
 });
 
 // Socket.io connection (basic)

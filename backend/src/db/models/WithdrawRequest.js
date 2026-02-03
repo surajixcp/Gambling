@@ -31,6 +31,7 @@ module.exports = (sequelize) => {
     }, {
         sequelize,
         modelName: 'WithdrawRequest',
+        tableName: 'WithdrawRequests',
     });
 
     return WithdrawRequest;
