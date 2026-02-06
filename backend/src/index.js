@@ -36,7 +36,11 @@ app.use('/api/v1', require('./app/routes'));
 // Error Handling
 app.use((err, req, res, next) => {
     console.error(err.stack);
-    res.status(500).json({ error: 'Something went wrong!', details: err.message });
+    const statusCode = err.statusCode || 500;
+    res.status(statusCode).json({
+        success: false,
+        error: err.message || 'Something went wrong!'
+    });
 });
 
 const PORT = process.env.PORT || 5000;

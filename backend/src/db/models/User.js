@@ -66,14 +66,8 @@ module.exports = (sequelize) => {
         sequelize,
         modelName: 'User',
         tableName: 'Users',
-        hooks: {
-            beforeSave: async (user) => {
-                if (user.changed('mpin_hash')) {
-                    const salt = await bcrypt.genSalt(10);
-                    user.mpin_hash = await bcrypt.hash(user.mpin_hash, salt);
-                }
-            }
-        }
+        modelName: 'User',
+        tableName: 'Users',
     });
 
     return User;

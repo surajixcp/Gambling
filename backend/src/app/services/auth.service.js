@@ -22,7 +22,7 @@ class AuthService {
             }
 
             // Create User
-            const mpin_hash = await bcrypt.hash(mpin, 10);
+            const mpin_hash = await bcrypt.hash(String(mpin).trim(), 10);
             const user = await User.create({
                 phone,
                 mpin_hash,
@@ -56,12 +56,14 @@ class AuthService {
      * @param {string} mpin
      */
     async login(phone, mpin) {
+        console.log(`[AUTH SERVICE] Login attempt for ${phone} with MPIN: '${mpin}'`);
         const user = await User.findOne({
             where: { phone },
             include: [{ model: Wallet, as: 'wallet' }]
         });
 
         if (!user) {
+            console.log(`[AUTH SERVICE] User not found: ${phone}`);
             throw new Error('Invalid credentials');
         }
 
@@ -70,8 +72,9 @@ class AuthService {
         }
 
         // Verify MPIN
-        // Note: Assuming mpin_hash stored properly
+        console.log(`[AUTH SERVICE] Verifying MPIN. Stored hash: ${user.mpin_hash}`);
         const isMatch = await bcrypt.compare(mpin, user.mpin_hash);
+        console.log(`[AUTH SERVICE] MPIN match result: ${isMatch}`);
 
         if (!isMatch) {
             throw new Error('Invalid MPIN');

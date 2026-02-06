@@ -1,6 +1,7 @@
 const cron = require('node-cron');
 const axios = require('axios');
 const { Market, Result, sequelize } = require('../../db/models');
+const { sendToTopic } = require('../../utils/push');
 // const winningDistributionService = require('./winning-distribution.service');
 
 class ResultFetcherService {
@@ -85,15 +86,34 @@ class ResultFetcherService {
                 // Trigger WIN Distribution for OPEN session if needed
                 // await winningDistributionService.distributeWins(market.id, 'open', open);
 
+                // ZERO-GRAVITY: Send Push Notification
+                await sendToTopic(
+                    "results",
+                    `📢 ${marketName} Result Declared!`,
+                    `Open: ${open}`
+                );
+
             } else {
                 // Update existing result if changed
                 if (open && result.open_declare !== open) {
                     await result.update({ open_declare: open });
                     // await winningDistributionService.distributeWins(market.id, 'open', open);
+
+                    await sendToTopic(
+                        "results",
+                        `📢 ${marketName} Open Updated!`,
+                        `Open: ${open}`
+                    );
                 }
                 if (close && result.close_declare !== close) {
                     await result.update({ close_declare: close });
                     // await winningDistributionService.distributeWins(market.id, 'close', close);
+
+                    await sendToTopic(
+                        "results",
+                        `📢 ${marketName} Close Declared!`,
+                        `Close: ${close}`
+                    );
                 }
             }
 

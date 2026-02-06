@@ -11,6 +11,34 @@ class WalletService {
     }
 
     /**
+     * Request Deposit (User initiated)
+     */
+    async requestDeposit(userId, amount, paymentDetails) {
+        const transaction = await sequelize.transaction();
+        try {
+            const wallet = await Wallet.findOne({ where: { user_id: userId }, transaction });
+            if (!wallet) throw new Error('Wallet not found');
+
+            // Record Transaction as PENDING (Do not add balance yet)
+            const walletTxn = await WalletTransaction.create({
+                wallet_id: wallet.id,
+                amount: amount,
+                type: 'deposit',
+                description: `Deposit Request (${paymentDetails.method})`,
+                reference_id: paymentDetails.utr, // Store UTR/Ref
+                status: 'pending',
+                metadata: paymentDetails // Store full details if needed
+            }, { transaction });
+
+            await transaction.commit();
+            return walletTxn;
+        } catch (error) {
+            await transaction.rollback();
+            throw error;
+        }
+    }
+
+    /**
      * Add funds (Admin manual or Payment Gateway callback)
      * Uses atomic transaction
      */

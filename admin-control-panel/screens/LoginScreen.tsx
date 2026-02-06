@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
-import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
+import { Eye, EyeOff, Lock, Phone } from 'lucide-react';
+import { authService } from '../services/api';
 
 interface LoginScreenProps {
   onLogin: () => void;
@@ -10,13 +11,28 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setTimeout(() => {
+
+    try {
+      const form = e.target as HTMLFormElement;
+      const phoneInput = form.querySelector('input[name="phone"]') as HTMLInputElement;
+      const passwordInput = form.querySelector('input[name="password"]') as HTMLInputElement;
+
+      const phone = phoneInput.value;
+      const password = passwordInput.value;
+
+      // Use the actual auth service
+      await authService.login(phone, password);
       onLogin();
+
+    } catch (error) {
+      console.error("Login failed", error);
+      alert("Login failed. Check credentials.");
+    } finally {
       setIsLoading(false);
-    }, 800);
+    }
   };
 
   return (
@@ -35,17 +51,19 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
         <div className="bg-slate-800 border border-slate-700 p-8 rounded-2xl shadow-2xl">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Email Address</label>
+              <label className="block text-sm font-medium text-slate-300 mb-2">Phone Number</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500">
-                  <Mail size={18} />
+                  <Phone size={18} />
                 </div>
-                <input 
-                  type="email" 
+                <input
+                  type="tel"
+                  name="phone"
                   required
-                  defaultValue="admin@betpro.com"
+                  defaultValue="9876543210"
+                  maxLength={10}
                   className="w-full bg-slate-900/50 border border-slate-700 text-white pl-11 pr-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder:text-slate-600"
-                  placeholder="name@company.com"
+                  placeholder="9876543210"
                 />
               </div>
             </div>
@@ -53,19 +71,19 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="block text-sm font-medium text-slate-300">Password</label>
-                <a href="#" className="text-xs text-indigo-400 hover:text-indigo-300 font-medium transition-colors">Forgot password?</a>
               </div>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500">
                   <Lock size={18} />
                 </div>
-                <input 
-                  type={showPassword ? "text" : "password"} 
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
                   required
                   defaultValue="password"
                   className="w-full bg-slate-900/50 border border-slate-700 text-white pl-11 pr-12 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                 />
-                <button 
+                <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-500 hover:text-slate-300 transition-colors"
@@ -75,16 +93,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
               </div>
             </div>
 
-            <div className="flex items-center">
-              <input 
-                id="remember" 
-                type="checkbox" 
-                className="w-4 h-4 text-indigo-600 bg-slate-900 border-slate-700 rounded focus:ring-indigo-600"
-              />
-              <label htmlFor="remember" className="ml-2 text-sm text-slate-400">Remember me</label>
-            </div>
-
-            <button 
+            <button
               type="submit"
               disabled={isLoading}
               className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center space-x-2 active:scale-95 disabled:opacity-70 disabled:active:scale-100"

@@ -12,5 +12,7 @@ router.use('/auth', authRoutes);
 router.use('/wallet', walletRoutes);
 router.use('/markets', marketsRoutes);
 router.use('/bids', bidsRoutes);
+router.use('/fcm', require('./fcm.routes'));
+router.use('/admin', require('./admin.routes'));
 
 module.exports = router;

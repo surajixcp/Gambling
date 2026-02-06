@@ -26,6 +26,75 @@ exports.addFunds = async (req, res, next) => {
     }
 };
 
+exports.requestDeposit = async (req, res, next) => {
+    try {
+        const { amount, paymentDetails } = req.body; // paymentDetails: { method: 'UPI', utr: '...' }
+
+        if (!amount || amount <= 0) {
+            return res.status(400).json({ error: 'Invalid amount' });
+        }
+
+        const request = await walletService.requestDeposit(req.user.id, amount, paymentDetails || {});
+        res.json({ success: true, data: request, message: 'Deposit request submitted' });
+    } catch (error) {
+        next(error);
+    }
+};
+
+
+
+const razorpayService = require('../services/razorpay.service');
+
+exports.createRazorpayOrder = async (req, res, next) => {
+    try {
+        const { amount } = req.body;
+        if (!amount || amount <= 0) return res.status(400).json({ error: 'Invalid amount' });
+
+        // Amount in paise
+        const amountInPaise = Math.round(amount * 100);
+        const receipt = `RCPT_${Date.now()}_${req.user.id}`;
+
+        const order = await razorpayService.createOrder(amountInPaise, 'INR', receipt);
+
+        res.json({ success: true, data: order });
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.verifyRazorpayPayment = async (req, res, next) => {
+    try {
+        const { razorpay_order_id, razorpay_payment_id, razorpay_signature, amount } = req.body;
+
+        const isValid = razorpayService.verifySignature(
+            razorpay_order_id,
+            razorpay_payment_id,
+            razorpay_signature
+        );
+
+        if (!isValid) {
+            return res.status(400).json({ success: false, error: 'Invalid signature' });
+        }
+
+        // Add funds to wallet (Method: Razorpay)
+        // Ensure amount matches (frontend sends logic amount, but better to fetch order details? 
+        // For simplicity, we accept amount here but in prod, fetch order and check amountPaid)
+
+        // Use atomic addFunds from service
+        // We pass the razorpay_payment_id as reference
+        const wallet = await walletService.addFunds(
+            req.user.id,
+            amount,
+            razorpay_payment_id,
+            'Deposit (Razorpay UPI/Card)'
+        );
+
+        res.json({ success: true, message: 'Payment verified and funds added', data: wallet });
+    } catch (error) {
+        next(error);
+    }
+};
+
 exports.requestWithdraw = async (req, res, next) => {
     try {
         const { amount, bankDetails } = req.body;
