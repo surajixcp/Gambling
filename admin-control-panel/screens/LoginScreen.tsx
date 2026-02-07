@@ -60,17 +60,17 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                   type="tel"
                   name="phone"
                   required
-                  defaultValue="9876543210"
+                  defaultValue="9999999999"
                   maxLength={10}
                   className="w-full bg-slate-900/50 border border-slate-700 text-white pl-11 pr-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder:text-slate-600"
-                  placeholder="9876543210"
+                  placeholder="Enter Admin Phone"
                 />
               </div>
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-medium text-slate-300">Password</label>
+                <label className="block text-sm font-medium text-slate-300">MPIN / Password</label>
               </div>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500">
@@ -80,7 +80,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                   type={showPassword ? "text" : "password"}
                   name="password"
                   required
-                  defaultValue="password"
+                  defaultValue="1234"
                   className="w-full bg-slate-900/50 border border-slate-700 text-white pl-11 pr-12 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                 />
                 <button

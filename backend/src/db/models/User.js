@@ -61,6 +61,16 @@ module.exports = (sequelize) => {
         device_token: {
             type: DataTypes.STRING,
             allowNull: true
+        },
+        profile_pic: {
+            type: DataTypes.STRING,
+            allowNull: true,
+            defaultValue: null
+        },
+        firebase_uid: {
+            type: DataTypes.STRING,
+            allowNull: true,
+            unique: true
         }
     }, {
         sequelize,

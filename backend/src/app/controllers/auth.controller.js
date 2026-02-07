@@ -41,3 +41,58 @@ exports.login = async (req, res, next) => {
         });
     }
 };
+
+exports.updateProfilePic = async (req, res, next) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ success: false, error: 'No image uploaded' });
+        }
+
+        const userId = req.user.id;
+        const imageUrl = req.file.path; // Cloudinary URL
+
+        const user = await authService.updateProfilePic(userId, imageUrl);
+
+        res.status(200).json({
+            success: true,
+            data: {
+                profile_pic: user.profile_pic
+            }
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.removeProfilePic = async (req, res, next) => {
+    try {
+        const userId = req.user.id;
+        await authService.removeProfilePic(userId);
+
+        res.status(200).json({
+            success: true,
+            message: 'Profile picture removed'
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.firebaseLogin = async (req, res, next) => {
+    try {
+        const { idToken } = req.body;
+
+        if (!idToken) {
+            return res.status(400).json({ success: false, error: 'Firebase ID Token is required' });
+        }
+
+        const result = await authService.firebaseLogin(idToken);
+
+        res.status(200).json({
+            success: true,
+            data: result
+        });
+    } catch (error) {
+        next(error);
+    }
+};

@@ -92,6 +92,127 @@ class AuthService {
         if (otp === '123456') return true; // Mock
         return false;
     }
+
+    /**
+     * Update user profile picture
+     * @param {number} userId
+     * @param {string} imageUrl
+     */
+    async updateProfilePic(userId, imageUrl) {
+        const user = await User.findByPk(userId);
+        if (!user) throw new Error('User not found');
+
+        // Optional: Delete old image from Cloudinary if needed (requires public_id storage)
+
+        user.profile_pic = imageUrl;
+        await user.save();
+        return user;
+    }
+
+    /**
+     * Remove user profile picture
+     * @param {number} userId
+     */
+    async removeProfilePic(userId) {
+        const user = await User.findByPk(userId);
+        if (!user) throw new Error('User not found');
+
+        user.profile_pic = null;
+        await user.save();
+        return user;
+    }
+
+    /**
+     * Firebase Login / Registration
+     * @param {string} idToken - Firebase ID Token from client
+     */
+    async firebaseLogin(idToken) {
+        // 1. Verify ID Token using Firebase Admin
+        // Lazily require firebase-admin to avoid circular deps or init issues
+        const admin = require('../../config/firebase');
+
+        let decodedToken;
+        try {
+            decodedToken = await admin.auth().verifyIdToken(idToken);
+        } catch (error) {
+            console.error('[AUTH SERVICE] Firebase Token Error:', error);
+            throw new Error('Invalid Firebase ID Token');
+        }
+
+        const { uid, phone_number } = decodedToken;
+
+        if (!phone_number) {
+            throw new Error('Phone number not found in Firebase Token. Ensure phone auth is used.');
+        }
+
+        console.log(`[AUTH SERVICE] Firebase Login for ${phone_number} (UID: ${uid})`);
+
+        // 2. Check if user exists by Firebase UID (Fastest)
+        let user = await User.findOne({
+            where: { firebase_uid: uid },
+            include: [{ model: Wallet, as: 'wallet' }]
+        });
+
+        // 3. If not found by UID, check by Phone (Migration or First Login)
+        if (!user) {
+            user = await User.findOne({
+                where: { phone: phone_number },
+                include: [{ model: Wallet, as: 'wallet' }]
+            });
+
+            if (user) {
+                // Link current user to Firebase UID
+                user.firebase_uid = uid;
+                await user.save();
+                console.log(`[AUTH SERVICE] Linked existing user ${phone_number} to Firebase UID ${uid}`);
+            }
+        }
+
+        // 4. If still not found, Register New User
+        if (!user) {
+            console.log(`[AUTH SERVICE] Creating new user for ${phone_number}`);
+            const transaction = await sequelize.transaction();
+            try {
+                // Auto-generate random MPIN hash as placeholder (User sets it later)
+                const mockMpin = Math.floor(1000 + Math.random() * 9000).toString();
+                const mpin_hash = await bcrypt.hash(mockMpin, 10);
+
+                user = await User.create({
+                    phone: phone_number,
+                    firebase_uid: uid,
+                    mpin_hash, // Placeholder
+                    role: 'user',
+                    status: 'active'
+                }, { transaction });
+
+                // Create Wallet
+                await Wallet.create({
+                    user_id: user.id,
+                    balance: 0.00,
+                    bonus: 50.00
+                }, { transaction });
+
+                await transaction.commit();
+
+                // Re-fetch with wallet for consistency
+                user = await User.findByPk(user.id, { include: [{ model: Wallet, as: 'wallet' }] });
+
+            } catch (error) {
+                await transaction.rollback();
+                throw error;
+            }
+        }
+
+        if (user.status === 'blocked') {
+            throw new Error('Your account is blocked. Contact support.');
+        }
+
+        // 5. Generate JWT
+        const token = user.getSignedJwtToken();
+
+        // Return both token and user info
+        return { user, token };
+    }
 }
 
 module.exports = new AuthService();
